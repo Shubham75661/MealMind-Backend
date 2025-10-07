@@ -27,7 +27,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,  
     allow_methods=["*"],    
     allow_headers=["*"],     
@@ -84,7 +84,7 @@ def get_calories(req: CalorieRequest, request : Request):
 
 @app.post("/register")
 @limiter.limit("15/minute")
-def register(user_data: UserCreate, db: Session = Depends(get_db)):
+def register(request : Request, user_data: UserCreate, db: Session = Depends(get_db)):
     user_service = UserService(db, security_service)
     result = user_service.register_user(user_data)
     if "error" in result:
@@ -93,13 +93,13 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
 
 @app.post("/login")
 @limiter.limit("15/minute")
-def login(user_data: UserLogin, db: Session = Depends(get_db)):
+def login(request : Request, user_data: UserLogin, db: Session = Depends(get_db)):
     user_service = UserService(db, security_service)
     return user_service.login_user(user_data.email, user_data.password)
 
 @app.post("/refresh")
 @limiter.limit("15/minute")
-def refresh_token(refresh_data: dict = Body(...), db: Session = Depends(get_db)):
+def refresh_token(request : Request, refresh_data: dict = Body(...), db: Session = Depends(get_db)):
     refresh_token = refresh_data.get("refreshToken")
     if not refresh_token:
         raise HTTPException(status_code=400, detail="Refresh token required")
